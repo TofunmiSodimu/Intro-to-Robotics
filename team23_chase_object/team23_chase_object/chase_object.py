@@ -24,6 +24,7 @@ import numpy as np
 import cv2
 from cv_bridge import CvBridge
 
+
 class MinimalChaseObject(Node):
 
     def __init__(self):
@@ -40,41 +41,52 @@ class MinimalChaseObject(Node):
         self.get_logger().info('I heard: "%s"' % str(msg))
         angle = msg.data[0]
         depth1 = msg.data[1]
-        previous_angle = 0.0
-        previous_depth = 0.0
+        move = Twist()
+        linear_error = depth1
+        angular_error = 0.0 - angle
 
-        # Move to left and forward
-        if ((angle-previous_angle) > 2.0):
-            move = Twist()
-            move.angular.z = -0.1
-            if depth1 > 0.5:
-                move.linear.x = 0.05
-                move.linear.y = 0.05
+        # Apply controller on angular movement
+        if abs(angular_error) > 2.0:
+            move.angular.z = 0.05 * angular_error
+
+            if move.angular.z < -0.05:
+                move.angular.z = -0.05
+            elif move.angular.z > 0.05:
+                move.angular.z = 0.05
+
             self._vel_publish.publish(move)
+            print(angular_error)
 
-        # Stay at center
-        elif (angle > -2) and (angle < 2):
-            move = Twist()
-            move.angular.z = 0.0
-            if depth1 > 0.5:
-                move.linear.x = 0.05
-                move.linear.y = 0.05
-            self._vel_publish.publish(move)
-            #self.get_logger().info('Publishing: "%s"' %str(message))
-
-        # Move to right and forward
-        elif ((angle-previous_angle) < 2.0):
-            move = Twist()
-            move.angular.z = 0.1
-            if depth1 > 0.5:
-                move.linear.x = 0.05
-                move.linear.y = 0.05
-            self._vel_publish.publish(move)
-
+        # Otherwise
         else:
             move.angular.z = 0.0
+            self._vel_publish.publish(move)
+
+        # Apply controller on linear movement
+        
+        if abs(linear_error) > 0.5:
+            linear_input = 0.1 * linear_error
+            if linear_input > 0.05:
+                linear_input = 0.05
+            move.linear.x = linear_input
+            self._vel_publish.publish(move)
+            print(linear_error)
+
+        elif linear_error < 0.5 and linear_error > 0:
+            linear_input = -0.1 * linear_error
+            if linear_input < -0.05:
+                linear_input = -0.05
+            move.linear.x = linear_input
+            self._vel_publish.publish(move)
+            print(linear_error)
+
+        # Otherwise
+        else:
             move.linear.x = 0.0
-            move.linear.y = 0.0
+            self._vel_publish.publish(move)
+            print(linear_error)
+
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -87,9 +99,13 @@ def main(args=None):
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
     move = Twist()
+    #print("hello?")
     move.angular.z = 0.0
-    move.linear.x = 0.1
-    move.linear.y = 0.1
+    move.angular.y = 0.0
+    move.angular.x = 0.0
+    move.linear.x = 0.0
+    move.linear.y = 0.0
+    move.linear.z = 0.0
     minimal_chase._vel_publish.publish(move)
     minimal_chase.destroy_node()
     rclpy.shutdown()

@@ -54,6 +54,7 @@ class MinimalVideoSubscriber(Node):
 
 		#Declare publisher
 		self.publisher_ = self.create_publisher(Point, 'topic', 10)
+		
 
 	def _image_callback(self, CompressedImage):	
 		# The "CompressedImage" is transformed to a color image in BGR space and is store in "_imgBGR"
@@ -67,7 +68,7 @@ class MinimalVideoSubscriber(Node):
 		return self._imgBGR
 
 	def show_image(self, img):
-		blur_img = cv2.medianBlur(img,5)
+		blur_img = cv2.medianBlur(img,7)
 		gray_img=cv2.cvtColor(blur_img, cv2.COLOR_BGR2GRAY)
 		circles=cv2.HoughCircles(gray_img, cv2.HOUGH_GRADIENT,1,90,param1=70,param2=60,minRadius=0,maxRadius=0)
 		if(circles is not None):

@@ -24,6 +24,7 @@ import sys
 import numpy as np
 import cv2
 from cv_bridge import CvBridge
+import math
 angle = 0.0
 
 class MinimalSubscriber(Node):
@@ -57,7 +58,8 @@ class MinimalSubscriber(Node):
         angle = ((coordinates_x/ 320) * 62.2)
    
     def listener_lidar(self,msg):
-        depth1_index = (round((len(msg.ranges)/360) * angle))
+        degrees1 = (((msg.angle_max - msg.angle_min) * 180) / math.pi)
+        depth1_index = (round((len(msg.ranges)/degrees1) * angle))
         depth1 = (msg.ranges[depth1_index])
         new_angle = angle - 31.1
         new_message = Float32MultiArray(data = [new_angle, depth1])
